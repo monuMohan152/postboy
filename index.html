@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postboy</title>
+<style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 50px);
+            padding: 20px;
+        }
+
+        .request {
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .request-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .request-header select,
+        .request-header input,
+        .request-header button {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        .request-header select {
+            flex: 0 0 80px;
+            margin-right: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            height: 40px;
+        }
+
+        .request-header input[type="text"] {
+            flex: 1;
+            height: 40px;
+            margin-right: 10px;
+            padding-left: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .request-header button {
+            height: 40px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 0 20px;
+            border-radius: 4px;
+        }
+
+        .request-header button:hover {
+            background-color: #0056b3;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid #007bff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .key-value-pairs {
+            margin-bottom: 10px;
+        }
+
+        .key-value-pairs div {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 5px;
+        }
+
+        .key-value-pairs input {
+            flex: 1;
+            margin-right: 10px;
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        .key-value-pairs button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .key-value-pairs button:hover {
+            background-color: #0056b3;
+        }
+
+        .response {
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        .response h2 {
+            margin-top: 0;
+        }
+
+        .response pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow: auto;
+        }
+
+        @media (min-width: 768px) {
+            .request-header {
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .request-header select,
+            .request-header input {
+                margin-right: 10px;
+                margin-bottom: 0;
+            }
+
+            .tabs {
+                flex-wrap: nowrap;
+            }
+
+            .key-value-pairs div {
+                flex-wrap: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Postboy</h1>
+    </header>
+    <div class="container">
+        <div class="request">
+            <div class="request-header">
+                <select id="method">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                    <option value="PATCH">PATCH</option>
+                    <option value="OPTIONS">OPTIONS</option>
+                    <option value="HEAD">HEAD</option>
+                </select>
+                <input type="text" id="url" placeholder="Enter request URL" style="max-width">
+                <button onclick="sendRequest()">Send</button>
+            </div>
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('params')">Params</div>
+                <div class="tab" onclick="showTab('authorization')">Authorization</div>
+                <div class="tab" onclick="showTab('headers')">Headers</div>
+                <div class="tab" onclick="showTab('body')">Body</div>
+                <div class="tab" onclick="showTab('pre-request-script')">Pre-request Script</div>
+                <div class="tab" onclick="showTab('tests')">Tests</div>
+                <div class="tab" onclick="showTab('settings')">Settings</div>
+            </div>
+            <div id="params" class="tab-content active">
+                <div class="key-value-pairs" id="params-container">
+                    <div>
+                        <input type="text" placeholder="Key">
+                        <input type="text" placeholder="Value">
+                        <button onclick="addPair('params-container')">Add</button>
+                    </div>
+                </div>
+            </div>
+            <div id="authorization" class="tab-content">
+                <div class="key-value-pairs" id="authorization-container">
+                    <div>
+                        <input type="text" placeholder="Type">
+                        <input type="text" placeholder="Token">
+                    </div>
+                </div>
+            </div>
+            <div id="headers" class="tab-content">
+                <div class="key-value-pairs" id="headers-container">
+                    <div>
+                        <input type="text" placeholder="Key">
+                        <input type="text" placeholder="Value">
+                        <button onclick="addPair('headers-container')">Add</button>
+                    </div>
+                </div>
+            </div>
+            <div id="body" class="tab-content">
+                <textarea id="request-body" placeholder="Request body (for POST/PUT requests)" style="width: 100%; height: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;"></textarea>
+            </div>
+            <div id="pre-request-script" class="tab-content">
+                <textarea id="pre-request-script-content" placeholder="Pre-request script" style="width: 100%; height: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;"></textarea>
+            </div>
+            <div id="tests" class="tab-content">
+                <textarea id="tests-content" placeholder="Tests script" style="width: 100%; height: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;"></textarea>
+            </div>
+            <div id="settings" class="tab-content">
+                <div>
+                    <label>
+                        <input type="checkbox" id="follow-redirects">
+                        Follow redirects
+                    </label>
+                    <label>
+                        <input type="checkbox" id="use-authentication">
+                        Use authentication
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="response">
+            <div class="toolbar">
+                <input type="text" id="search-box" placeholder="Search...">
+                <button onclick="copyResponse()">Copy</button>
+            </div>
+            <h2>Response</h2>
+            <pre id="response-content">
+{
+    "message": "Response will be displayed here"
+}
+            </pre>
+            <div class="details" id="response-details"></div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                if (tab.innerHTML.toLowerCase().includes(tabId)) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+
+            contents.forEach(content => {
+                if (content.id === tabId) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+        }
+
+        function addPair(containerId) {
+            const container = document.getElementById(containerId);
+            const newPair = document.createElement('div');
+            newPair.innerHTML = `
+                <input type="text" placeholder="Key">
+                <input type="text" placeholder="Value">
+                <button onclick="removePair(this)">Remove</button>
+            `;
+            container.appendChild(newPair);
+        }
+
+        function removePair(button) {
+            const pair = button.parentElement;
+            pair.parentElement.removeChild(pair);
+        }
+
+        async function sendRequest() {
+    const method = document.getElementById('method').value;
+    const url = document.getElementById('url').value;
+
+    const params = new URLSearchParams();
+    const paramsContainer = document.getElementById('params-container');
+    const paramsInputs = paramsContainer.querySelectorAll('input');
+    for (let i = 0; i < paramsInputs.length; i += 2) {
+        const key = paramsInputs[i].value;
+        const value = paramsInputs[i + 1].value;
+        if (key && value) {
+            params.append(key, value);
+        }
+    }
+
+    const headers = {};
+    const headersContainer = document.getElementById('headers-container');
+    const headersInputs = headersContainer.querySelectorAll('input');
+    for (let i = 0; i < headersInputs.length; i += 2) {
+        const key = headersInputs[i].value;
+        const value = headersInputs[i + 1].value;
+        if (key && value) {
+            headers[key] = value;
+        }
+    }
+
+    let body = null;
+    if (['POST', 'PUT', 'PATCH'].includes(method)) {
+        body = document.getElementById('request-body').value;
+    }
+
+    const options = {
+        method,
+        headers,
+        body: body ? JSON.stringify(JSON.parse(body)) : null
+    };
+
+    const startTime = performance.now();
+
+    try {
+        const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+        const response = await fetch(proxyUrl + url + '?' + params.toString(), options);
+        const contentType = response.headers.get('content-type');
+
+        if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            document.getElementById('response-content').textContent = JSON.stringify(data, null, 2);
+        } else {
+            const text = await response.text();
+            document.getElementById('response-content').textContent = text;
+        }
+
+        const endTime = performance.now();
+        const elapsedTime = endTime - startTime;
+        const responseSize = new Blob([document.getElementById('response-content').textContent]).size;
+
+        document.getElementById('response-details').innerHTML = `
+            Status: ${response.status} ${response.statusText} <br>
+            Time: ${elapsedTime.toFixed(2)} ms <br>
+            Size: ${responseSize} B
+        `;
+    } catch (error) {
+        document.getElementById('response-content').textContent = `Error: ${error.message}`;
+    }
+}
+
+        function copyResponse() {
+            const responseContent = document.getElementById('response-content').textContent;
+            navigator.clipboard.writeText(responseContent)
+                .then(() => alert('Response copied to clipboard!'))
+                .catch(err => alert('Failed to copy response: ' + err));
+        }
+
+        document.getElementById('search-box').addEventListener('input', function () {
+            const searchText = this.value.toLowerCase();
+            const responseContent = document.getElementById('response-content').textContent.toLowerCase();
+            const index = responseContent.indexOf(searchText);
+            if (index !== -1) {
+                const highlightedText = responseContent.substring(0, index) + 
+                                        '<mark>' + responseContent.substring(index, index + searchText.length) + '</mark>' + 
+                                        responseContent.substring(index + searchText.length);
+                document.getElementById('response-content').innerHTML = highlightedText;
+            } else {
+                document.getElementById('response-content').innerHTML = responseContent;
+            }
+        });
+    </script>
+</body>
+</html>
